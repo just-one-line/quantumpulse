@@ -1,14 +1,23 @@
 {% extends "base.html" %}
+{% block title %}News · QuantumPulse{% endblock %}
 
 {% block content %}
-<h2>Latest News</h2>
-<ul>
-  {% for item in news %}
-    <li>
-      <strong>{{ item.title }}</strong><br>
-      <small>{{ item.date }}</small><br>
-      <p>{{ item.content }}</p>
-    </li>
-  {% endfor %}
-</ul>
+  <h1>Latest News (sample)</h1>
+
+  {% if news and news|length > 0 %}
+    <ul class="news-list">
+      {% for item in news %}
+        <li class="news-item">
+          <a href="{{ item.url or '#' }}" target="_blank" rel="noopener">
+            <strong>{{ item.title }}</strong>
+          </a>
+          {% if item.date %}<div class="muted">{{ item.date }}</div>{% endif %}
+          {% if item.tags %}<div class="muted">{{ item.tags|join(', ') }}</div>{% endif %}
+          {% if item.summary %}<p>{{ item.summary }}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No news items available.</p>
+  {% endif %}
 {% endblock %}
