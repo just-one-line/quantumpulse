@@ -10,31 +10,41 @@
 <body>
   <header>
     <h1>⚡ QuantumPulse</h1>
-    <p class="sub">Live MVP — UI + API deployed on DigitalOcean</p>
+    <p class="sub">Live MVP — UI + API</p>
   </header>
 
   <main>
     <section class="card">
-      <div class="row">
+      <form id="trade-form" class="row">
         <div class="col">
-          <label for="name">Enter your name</label>
-          <input id="name" placeholder="Ada Lovelace" />
+          <label for="stock">Stock</label>
+          <input id="stock" placeholder="e.g. TSLA" required />
+        </div>
+        <div class="col">
+          <label for="action">Action</label>
+          <select id="action">
+            <option value="analyze">Analyze</option>
+            <option value="buy">Buy (simulated)</option>
+            <option value="sell">Sell (simulated)</option>
+          </select>
         </div>
         <div class="col col-btn">
-          <button id="btn">Check my pulse</button>
+          <button type="submit">Run</button>
         </div>
-      </div>
-      <div class="row">
-        <pre id="out">Tap the button to call /api/pulse…</pre>
-      </div>
-      <canvas id="chart" height="120"></canvas>
+      </form>
+
+      <pre id="result">Fill the form and press Run…</pre>
+      <canvas id="trendChart" height="120"></canvas>
     </section>
   </main>
 
   <footer>
-    <small>© <span id="year"></span> QuantumPulse • <code>/health</code> status: <span id="health">checking…</span></small>
+    <small>© <span id="year"></span> QuantumPulse</small>
   </footer>
 
-  <script src="/static/app.js"></script>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+  <script src="/static/script.js"></script>
 </body>
-    </html>
+</html>
