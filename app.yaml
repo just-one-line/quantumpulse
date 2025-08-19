@@ -1,0 +1,22 @@
+spec:
+  name: quantumpulse
+  region: ams
+  services:
+    - name: api
+      dockerfile_path: api/Dockerfile
+      github:
+        repo: just-one-line/quantumpulse
+        branch: main
+        deploy_on_push: true
+      http_port: 8080
+      routes:
+        - path: /api
+      envs:
+        - key: APP_ENV
+          value: prod
+        - key: TV_WEBHOOK_SECRET
+          scope: RUN_TIME
+        - key: JWT_SECRET
+          scope: RUN_TIME
+        - key: CAPITALCOM_ENV
+          scope: RUN_TIME
