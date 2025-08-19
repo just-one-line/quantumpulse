@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Prediction Results</h2>
+
+{% if prediction %}
+  <p><strong>Stock Symbol:</strong> {{ prediction.symbol }}</p>
+  <p><strong>News Title:</strong> {{ prediction.title }}</p>
+  <p><strong>Predicted Trend:</strong> {{ prediction.trend }}</p>
+  <p><strong>Confidence:</strong> {{ prediction.confidence }}%</p>
+{% else %}
+  <p>No prediction available. Please check back later.</p>
+{% endif %}
+
+{% endblock %}
