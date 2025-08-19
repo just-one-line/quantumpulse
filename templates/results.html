@@ -1,15 +1,17 @@
 {% extends "base.html" %}
+{% block title %}Results · QuantumPulse{% endblock %}
 
 {% block content %}
-<h2>Prediction Results</h2>
+  <h1>Results{% if query %} for “{{ query }}”{% endif %}</h1>
 
-{% if prediction %}
-  <p><strong>Stock Symbol:</strong> {{ prediction.symbol }}</p>
-  <p><strong>News Title:</strong> {{ prediction.title }}</p>
-  <p><strong>Predicted Trend:</strong> {{ prediction.trend }}</p>
-  <p><strong>Confidence:</strong> {{ prediction.confidence }}%</p>
-{% else %}
-  <p>No prediction available. Please check back later.</p>
-{% endif %}
-
-{% endblock %}
+  {% if rows and rows|length > 0 %}
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Symbol / Name</th>
+          <th class="right">Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
