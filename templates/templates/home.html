@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <h2>Signal-ranked insights, fast.</h2>
+    <p>This is a simple placeholder UI so you can see pages rendering from Flask.</p>
+
+    <form action="/results" method="get" class="search">
+      <input type="text" name="q" placeholder="Try: ai regulation" />
+      <button type="submit">Search</button>
+    </form>
+  </section>
+{% endblock %}
