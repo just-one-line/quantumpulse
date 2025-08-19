@@ -1,27 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuantumPulse</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}QuantumPulse{% endblock %}</title>
+
+  <!-- Site-wide CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <header>
-    <h1>🚀 QuantumPulse</h1>
-    <nav>
-      <a href="/">Home</a> |
-      <a href="/news">News</a> |
-      <a href="/results">Results</a>
+  <header class="site-header">
+    <nav class="nav">
+      <a href="{{ url_for('home') }}" class="logo">QuantumPulse</a>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        <li><a href="{{ url_for('about') }}">About</a></li>
+        <li><a href="{{ url_for('news') }}">News</a></li>
+        <li><a href="{{ url_for('results') }}">Results</a></li>
+      </ul>
     </nav>
   </header>
 
-  <main>
+  <main class="container">
     {% block content %}{% endblock %}
   </main>
 
-  <footer>
-    <p>Powered by QuantumPulse AI</p>
+  <footer class="site-footer">
+    <small>&copy; {{  (now() if false)  }} QuantumPulse</small>
   </footer>
+
+  <!-- Site-wide JS -->
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>
