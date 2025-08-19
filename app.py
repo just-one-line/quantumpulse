@@ -1,55 +1,37 @@
-from flask import Flask, jsonify, request, render_template
-from flask_cors import CORS
-import os, json
-from algorithm import recommend_portfolio
+from flask import Flask, render_template, request
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
-CORS(app)
+app = Flask(__name__)
 
 @app.route("/")
-def index():
-    # serves the frontend dashboard
-    return render_template("index.html")
+def home():
+    return render_template("index.html")  # your homepage
 
-@app.route("/api/health")
-def health():
-    return jsonify(status="ok")
+@app.route("/about")
+def about():
+    return render_template("about.html")
 
-@app.route("/api/news")
+@app.route("/news")
 def news():
-    topic = (request.args.get("topic") or "all").lower()
-    data_path = os.path.join("data", "news.json")
-    try:
-        with open(data_path, "r", encoding="utf-8") as f:
-            items = json.load(f)
-    except Exception:
-        items = []
+    sample_news = [
+        {"title": "QuantumPulse alpha live", "url": "#", "date": "Today", "tags": ["platform"], "summary": "Initial MVP deployed."},
+        {"title": "Roadmap update", "url": "#", "date": "This week", "tags": ["roadmap"], "summary": "Next: live news ingestion & weighting."},
+    ]
+    return render_template("news.html", news=sample_news)
 
-    if topic != "all":
-        items = [
-            n for n in items
-            if topic in n.get("title", "").lower()
-            or topic in " ".join(n.get("tags", [])).lower()
-        ]
-    return jsonify(items=items[:20])
+@app.route("/results")
+def results():
+    query = request.args.get("q", "")
+    rows = [
+        {"name": "TSLA", "score": 0.82},
+        {"name": "NVDA", "score": 0.77},
+        {"name": "AAPL", "score": 0.64},
+    ]
+    return render_template("results.html", query=query, rows=rows)
 
-@app.route("/api/recommend", methods=["POST"])
-def recommend():
-    payload = request.get_json(force=True) or {}
-    risk = (payload.get("risk") or "medium").lower()
-    horizon = int(payload.get("horizon") or 12)
-    focus = payload.get("focus") or []
-    result = recommend_portfolio(risk=risk, horizon=horizon, focuses=focus)
-    return jsonify(result)
-
-@app.route("/api/feedback", methods=["POST"])
-def feedback():
-    os.makedirs("data", exist_ok=True)
-    entry = {"payload": request.get_json(force=True) or {}}
-    with open(os.path.join("data", "feedback.log"), "a", encoding="utf-8") as f:
-        f.write(json.dumps(entry) + "\n")
-    return jsonify(ok=True)
+# Health check (handy for DO)
+@app.route("/health")
+def health():
+    return {"status": "ok"}
 
 if __name__ == "__main__":
-    # Gunicorn will run this by default in App Platform (app:app)
     app.run(host="0.0.0.0", port=8080)
