@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>QuantumPulse MVP</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>⚡ QuantumPulse</h1>
+    <p class="sub">Live MVP — UI + API deployed on DigitalOcean</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="row">
+        <div class="col">
+          <label for="name">Enter your name</label>
+          <input id="name" placeholder="Ada Lovelace" />
+        </div>
+        <div class="col col-btn">
+          <button id="btn">Check my pulse</button>
+        </div>
+      </div>
+      <div class="row">
+        <pre id="out">Tap the button to call /api/pulse…</pre>
+      </div>
+      <canvas id="chart" height="120"></canvas>
+    </section>
+  </main>
+
+  <footer>
+    <small>© <span id="year"></span> QuantumPulse • <code>/health</code> status: <span id="health">checking…</span></small>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+    </html>
