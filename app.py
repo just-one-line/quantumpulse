@@ -1,89 +1,98 @@
-# app.py
 from __future__ import annotations
-import os, logging
-from flask import (
-    Flask, Blueprint, render_template, request, jsonify, redirect, url_for, flash
-)
-from werkzeug.middleware.proxy_fix import ProxyFix
-import algorithm as algo  # local module with analyze_text/analyze_batch
 
-APP_VERSION = os.getenv("QP_VERSION", "1.0.0")
+import os
+from dataclasses import dataclass
+from typing import Any, Dict, List, Optional, Tuple
+
+from flask import Flask, jsonify, render_template, request, url_for
+from flask_cors import CORS
+
+# ---- Try to import your algorithm; provide a safe fallback if it isn't defined yet.
+try:
+    # Expecting you to have algorithm.py with a function like `score_text`
+    # Feel free to rename to your actual function name and signature.
+    from algorithm import score_text  # type: ignore
+except Exception:
+    def score_text(text: str) -> Dict[str, Any]:
+        """Fallback scoring if algorithm.py isn't ready. Replace with your real logic."""
+        text = (text or "").strip()
+        base = 50
+        length_bonus = min(len(text) // 20, 50)  # crude placeholder
+        return {
+            "score": min(base + length_bonus, 100),
+            "components": {
+                "clarity": min(20 + len(text) // 40, 30),
+                "novelty": 15,
+                "feasibility": 15,
+                "signal": 10,
+            },
+            "notes": "Fallback algorithm in app.py used. Implement score_text in algorithm.py."
+        }
+
 
 def create_app() -> Flask:
-    app = Flask(__name__)
-    app.config.update(
-        SECRET_KEY=os.getenv("SECRET_KEY", "dev-not-secret"),
-        JSON_SORT_KEYS=False,
-        APP_VERSION=APP_VERSION,
-    )
-    # Respect proxy headers on DigitalOcean
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # type: ignore
+    app = Flask(__name__, static_folder="static", template_folder="templates")
+    CORS(app)
 
-    # ---------- PAGES ----------
-    pages = Blueprint("pages", __name__)
-
-    @pages.route("/")
-    def index():
+    # ---------- Basic Pages
+    @app.route("/")
+    def home():
         return render_template("index.html")
 
-    @pages.route("/about")
+    @app.route("/about")
     def about():
         return render_template("about.html")
 
-    @pages.route("/news")
+    @app.route("/news")
     def news():
-        articles = [
-            {"tag": "Release", "title": f"QuantumPulse v{APP_VERSION}"},
-            {"tag": "Roadmap", "title": "Next: async workers & vector DB"},
-        ]
-        return render_template("news.html", articles=articles)
+        return render_template("news.html")
 
-    @pages.route("/results", methods=["GET", "POST"])
+    @app.route("/results")
     def results():
-        text = result = None
-        if request.method == "POST":
-            text = (request.form.get("text") or "").strip()
-            if not text:
-                flash(("warn", "Please paste some text to analyze."))
-                return redirect(url_for("pages.results"))
-            result = algo.analyze_text(text)
-        return render_template("results.html", text=text, result=result)
+        return render_template("results.html")
 
-    app.register_blueprint(pages)
+    # ---------- Health for platform checks
+    @app.route("/healthz")
+    def healthz():
+        return jsonify({"status": "ok"})
 
-    # ---------- API (versioned) ----------
-    api = Blueprint("api", __name__, url_prefix="/api/v1")
-
-    @api.get("/health")
-    def health():
-        return jsonify({"ok": True, "service": "quantumpulse", "version": APP_VERSION})
-
-    @api.post("/analyze")
-    def analyze():
-        payload = request.get_json(silent=True) or {}
-        if "texts" in payload and isinstance(payload["texts"], list):
-            out = algo.analyze_batch(payload["texts"])
-        else:
+    # ---------- API: score/evaluate text
+    @app.route("/api/score", methods=["POST"])
+    def api_score():
+        """
+        Expected JSON:
+        {
+          "text": "your idea / content",
+          "meta": { ... optional extra fields ... }
+        }
+        """
+        try:
+            payload = request.get_json(silent=True) or {}
             text = (payload.get("text") or "").strip()
+
             if not text:
-                return jsonify({"error": "Provide 'text' or 'texts'."}), 400
-            out = algo.analyze_text(text)
-        return jsonify(out)
+                return jsonify({"error": "Missing 'text'"}), 400
 
-    app.register_blueprint(api)
+            result = score_text(text)  # Your algorithm
+            return jsonify({
+                "ok": True,
+                "result": result
+            })
+        except Exception as e:
+            return jsonify({"ok": False, "error": str(e)}), 500
 
-    # ---------- Errors ----------
+    # ---------- 404 -> send home (optional; keeps SPA-like nav tidy)
     @app.errorhandler(404)
-    def not_found(e):
-        return render_template("base.html"), 404
-
-    # ---------- Logging ----------
-    level = logging.INFO if os.getenv("FLASK_ENV") == "production" else logging.DEBUG
-    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(message)s")
+    def not_found(_):
+        return render_template("index.html"), 404
 
     return app
 
-# Local dev entrypoint; DO uses gunicorn via Procfile
+
+# Gunicorn entrypoint
+app = create_app()
+
+# Local dev runner
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8080"))
-    create_app().run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port, debug=True)
