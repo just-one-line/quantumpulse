@@ -1,14 +1,15 @@
 {% extends "base.html" %}
+{% block title %}About · QuantumPulse{% endblock %}
 
 {% block content %}
-<h2>About QuantumPulse</h2>
-<p>
-  QuantumPulse is an AI-powered stock trend predictor that analyzes
-  news sentiment, source reliability, and historical performance to
-  highlight potential stock moves.
-</p>
-<p>
-  This app continuously learns from outcomes, so its predictions
-  improve over time.
-</p>
+  <h1>About QuantumPulse</h1>
+  <p>
+    QuantumPulse is an AI‑assisted trading companion. It blends news‑trend momentum,
+    source reliability, and price action into simple Buy / Hold / Sell signals.
+  </p>
+  <p>
+    This MVP demonstrates the structure: a Flask API with a lightweight UI.
+    The production roadmap adds live news ingestion, weighting, backtests,
+    broker connectivity, and a self‑learning loop.
+  </p>
 {% endblock %}
