@@ -2,11 +2,11 @@
 {% block title %}Home · QuantumPulse{% endblock %}
 
 {% block content %}
-<section style="padding:24px;max-width:1000px;margin:0 auto;">
-  <h1 style="margin:0 0 12px;font-size:2rem;">👋 Hello from QuantumPulse</h1>
-  <p>If you can see this, templates are wired correctly.</p>
+<section class="section">
+  <h1 class="h1">👋 Hello from QuantumPulse</h1>
+  <p class="muted">If you can see this, templates are wired correctly.</p>
 
-  <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;">
+  <div class="chip-row">
     <a class="chip" href="/about">About</a>
     <a class="chip" href="/news">News</a>
     <a class="chip" href="/results">Results</a>
@@ -15,27 +15,18 @@
     <button id="runBtn" class="chip" style="cursor:pointer;">▶ Run Agent Once</button>
   </div>
 
-  <pre id="runOut" style="margin-top:16px;opacity:.85;"></pre>
-
-  <style>
-    .chip{border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:10px 14px;text-decoration:none;color:inherit;background:rgba(255,255,255,.04)}
-    .chip:hover{background:rgba(255,255,255,.08)}
-  </style>
-  <script>
-    const btn = document.getElementById('runBtn');
-    const out = document.getElementById('runOut');
-    if (btn) {
-      btn.addEventListener('click', async () => {
-        out.textContent = 'Running…';
-        try {
-          const r = await fetch('/api/agent/run_once', {method:'POST'});
-          const j = await r.json();
-          out.textContent = JSON.stringify(j, null, 2);
-        } catch(e) {
-          out.textContent = 'Error: ' + e;
-        }
-      });
-    }
-  </script>
+  <pre id="runOut" class="pre"></pre>
 </section>
 {% endblock %}
+
+{% block scripts %}
+<script>
+  const btn = document.getElementById('runBtn');
+  const out = document.getElementById('runOut');
+  if (btn) {
+    btn.addEventListener('click', async () => {
+      out.textContent = 'Running…';
+      try {
+        const r = await fetch('/api/agent/run_once', { method:'POST' });
+        const j = await r.json();
+        out
