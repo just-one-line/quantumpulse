@@ -1,57 +1,70 @@
-from flask import Flask, render_template, request, jsonify
+import os
+from flask import Flask, render_template, jsonify, request
+from flask_cors import CORS
 from datetime import datetime
 
-# --- Agent imports ---
-try:
-    from agent.agent import TradingAgent
-except Exception as e:
-    TradingAgent = None
-    _agent_import_error = str(e)
+# our lightweight background agent
+from agent import agent as qp_agent
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
+CORS(app)
 
-# Create a single agent instance (if available)
-agent = TradingAgent() if TradingAgent else None
-
-# ---------- Web pages ----------
+# ---------- Pages ----------
 @app.route("/")
 def home():
     return render_template("index.html")
 
 @app.route("/about")
 def about():
-    # Only render if template exists; otherwise show a minimal page
-    try:
-        return render_template("about.html")
-    except Exception:
-        return "<h1>About</h1><p>Coming soon.</p>"
+    return render_template("about.html")
 
 @app.route("/news")
 def news():
-    try:
-        return render_template("news.html")
-    except Exception:
-        return "<h1>News</h1><p>Coming soon.</p>"
+    return render_template("news.html")
 
 @app.route("/results")
 def results():
-    try:
-        return render_template("results.html")
-    except Exception:
-        return "<h1>Results</h1><p>Coming soon.</p>"
+    return render_template("results.html")
 
 @app.route("/agent")
-def agent_ui():
-    """Simple page to view agent memory and run a test analysis."""
-    # Fallback text if Jinja template doesn't exist
-    try:
-        return render_template("agent.html")
-    except Exception:
-        if agent is None:
-            return f"<h1>Agent</h1><p>Import error: {_agent_import_error}</p>"
-        mem = agent.get_recent_memory(20)
-        items = "".join(f"<li>{m}</li>" for m in mem)
-        return f"""
-            <h1>Agent Memory</h1>
-            <ul>{items}</ul>
-            <form method="post" action="/agent/run"><button>Run test analysis</button
+def agent_page():
+    return render_template("agent.html")
+
+# ---------- Health ----------
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok", "time": datetime.utcnow().isoformat()})
+
+# ---------- Agent API ----------
+@app.route("/api/agent/status", methods=["GET"])
+def api_agent_status():
+    return jsonify(qp_agent.status())
+
+@app.route("/api/agent/logs", methods=["GET"])
+def api_agent_logs():
+    limit = int(request.args.get("limit", "200"))
+    return jsonify({"logs": qp_agent.get_logs(limit)})
+
+@app.route("/api/agent/start", methods=["POST"])
+def api_agent_start():
+    cfg = request.get_json(silent=True) or {}
+    qp_agent.set_config(cfg)  # merge config
+    started = qp_agent.start()
+    return jsonify({"started": started, "status": qp_agent.status()})
+
+@app.route("/api/agent/stop", methods=["POST"])
+def api_agent_stop():
+    stopped = qp_agent.stop()
+    return jsonify({"stopped": stopped, "status": qp_agent.status()})
+
+@app.route("/api/agent/config", methods=["GET", "POST"])
+def api_agent_config():
+    if request.method == "GET":
+        return jsonify(qp_agent.get_config())
+    data = request.get_json(silent=True) or {}
+    qp_agent.set_config(data)
+    return jsonify(qp_agent.get_config())
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "8080"))
+    app.run(host="0.0.0.0", port=port)
