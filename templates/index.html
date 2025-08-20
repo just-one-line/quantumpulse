@@ -1,6 +1,25 @@
 {% extends "base.html" %}
+
 {% block title %}Home · QuantumPulse{% endblock %}
+
 {% block content %}
-  <h1>Welcome to QuantumPulse</h1>
-  <p>This is your starter page. Styling comes from <code>static/styles.css</code>; behavior from <code>static/script.js</code>.</p>
+  <section style="padding:24px;max-width:900px;margin:0 auto;">
+    <h1 style="font-size:2.2rem;line-height:1.2;margin:0 0 12px;">👋 Hello from QuantumPulse</h1>
+    <p style="font-size:1.05rem;margin:0 0 16px;">
+      If you can see this, the Flask templates are loading correctly.
+    </p>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin:16px 0 24px;">
+      <a href="/about" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);text-decoration:none;">About</a>
+      <a href="/news" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);text-decoration:none;">News</a>
+      <a href="/results" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);text-decoration:none;">Results</a>
+      <a href="/api/agent/status" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);text-decoration:none;">Agent Status (JSON)</a>
+      <a href="/health" style="padding:10px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);text-decoration:none;">Health</a>
+    </div>
+
+    <p style="opacity:.85">
+      Styling for this page is inline on purpose so it’s impossible to miss anything even if
+      <code>/static/styles.css</code> fails to load.
+    </p>
+  </section>
 {% endblock %}
