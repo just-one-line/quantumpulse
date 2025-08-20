@@ -2,16 +2,38 @@
 {% block title %}Results · QuantumPulse{% endblock %}
 
 {% block content %}
-  <h1>Results{% if query %} for “{{ query }}”{% endif %}</h1>
+<section style="padding:24px;max-width:1000px;margin:0 auto;">
+  <h1 style="margin:0 0 8px;font-size:1.9rem;">Latest Signals & Backtests</h1>
+  <p style="opacity:.85;margin:0 0 18px;">
+    This page renders whatever the backend returns. If it's empty, you'll see a friendly message.
+  </p>
 
-  {% if rows and rows|length > 0 %}
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Symbol / Name</th>
-          <th class="right">Score</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-          <tr>
+  {% if results and results|length > 0 %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;">
+      {% for r in results %}
+        <article style="border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:14px;">
+          <header style="display:flex;justify-content:space-between;gap:10px;">
+            <strong>{{ r.symbol or r.ticker or '—' }}</strong>
+            <span style="opacity:.8">{{ r.time or r.timestamp or r.date or '' }}</span>
+          </header>
+          <div style="margin-top:8px;opacity:.92">
+            <div>Action: <strong>{{ r.action or r.signal or 'n/a' }}</strong></div>
+            {% if r.price %}<div>Price: {{ r.price }}</div>{% endif %}
+            {% if r.pnl is defined %}<div>PnL: {{ r.pnl }}</div>{% endif %}
+            {% if r.confidence is defined %}<div>Confidence: {{ r.confidence }}</div>{% endif %}
+            {% if r.notes %}<div style="margin-top:6px;opacity:.8">{{ r.notes }}</div>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="border:1px dashed rgba(255,255,255,.25);border-radius:14px;padding:18px;">
+      <p style="margin:0 0 8px;">No results yet.</p>
+      <p style="margin:0;opacity:.85">
+        When the agent writes signals/backtests to storage, they will appear here.
+        You can also check <a href="/api/results">/api/results</a> for raw JSON.
+      </p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
