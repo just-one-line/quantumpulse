@@ -1,70 +1,40 @@
-import os
-from flask import Flask, render_template, jsonify, request
-from flask_cors import CORS
-from datetime import datetime
+from flask import Flask, render_template, request, jsonify
+from agent.agent import TradingAgent
+from agent.memory import Memory
 
-# our lightweight background agent
-from agent import agent as qp_agent
+app = Flask(__name__)
 
-app = Flask(__name__, template_folder="templates", static_folder="static")
-CORS(app)
+# Initialize memory and agent
+memory = Memory()
+agent = TradingAgent(memory=memory)
 
-# ---------- Pages ----------
 @app.route("/")
-def home():
+def index():
     return render_template("index.html")
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/api/signal", methods=["POST"])
+def signal():
+    """
+    Receives market data from frontend or API,
+    runs the trading agent, and stores/retrieves context.
+    """
+    data = request.json
+    if not data:
+        return jsonify({"error": "No input data"}), 400
 
-@app.route("/news")
-def news():
-    return render_template("news.html")
+    # Example: pass price data into the agent
+    market_signal = data.get("signal", "no-signal")
+    decision = agent.decide(market_signal)
 
-@app.route("/results")
-def results():
-    return render_template("results.html")
+    # Save decision in memory
+    memory.add({"input": market_signal, "decision": decision})
 
-@app.route("/agent")
-def agent_page():
-    return render_template("agent.html")
+    return jsonify({"decision": decision})
 
-# ---------- Health ----------
-@app.route("/health")
-def health():
-    return jsonify({"status": "ok", "time": datetime.utcnow().isoformat()})
-
-# ---------- Agent API ----------
-@app.route("/api/agent/status", methods=["GET"])
-def api_agent_status():
-    return jsonify(qp_agent.status())
-
-@app.route("/api/agent/logs", methods=["GET"])
-def api_agent_logs():
-    limit = int(request.args.get("limit", "200"))
-    return jsonify({"logs": qp_agent.get_logs(limit)})
-
-@app.route("/api/agent/start", methods=["POST"])
-def api_agent_start():
-    cfg = request.get_json(silent=True) or {}
-    qp_agent.set_config(cfg)  # merge config
-    started = qp_agent.start()
-    return jsonify({"started": started, "status": qp_agent.status()})
-
-@app.route("/api/agent/stop", methods=["POST"])
-def api_agent_stop():
-    stopped = qp_agent.stop()
-    return jsonify({"stopped": stopped, "status": qp_agent.status()})
-
-@app.route("/api/agent/config", methods=["GET", "POST"])
-def api_agent_config():
-    if request.method == "GET":
-        return jsonify(qp_agent.get_config())
-    data = request.get_json(silent=True) or {}
-    qp_agent.set_config(data)
-    return jsonify(qp_agent.get_config())
+@app.route("/api/memory", methods=["GET"])
+def get_memory():
+    """Return stored memory for debugging/inspection"""
+    return jsonify(memory.get_all())
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8080"))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=8080)
