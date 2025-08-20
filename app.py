@@ -1,71 +1,57 @@
-# app.py
 from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
-import logging, sys
 from datetime import datetime
 
-app = Flask(__name__, static_folder="static", template_folder="templates")
-CORS(app)
-
-# basic logging to stdout so App Platform shows it
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-log = logging.getLogger("quantumpulse")
-
-# ---- Algorithm import (safe fallback) --------------------
+# --- Agent imports ---
 try:
-    from algorithm import run_algorithm
+    from agent.agent import TradingAgent
 except Exception as e:
-    log.exception("algorithm import failed; using fallback: %s", e)
+    TradingAgent = None
+    _agent_import_error = str(e)
 
-    def run_algorithm(query: str):
-        """Minimal fallback so the app still works."""
-        q = (query or "").strip()
-        score = round(min(len(q) / 100.0, 1.0), 3)
-        return {
-            "query": q,
-            "score": score,
-            "explain": "Fallback algorithm: score = length/100",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
-        }
+app = Flask(__name__)
 
-# ---- Routes ----------------------------------------------
+# Create a single agent instance (if available)
+agent = TradingAgent() if TradingAgent else None
+
+# ---------- Web pages ----------
 @app.route("/")
-def index():
+def home():
     return render_template("index.html")
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    # Only render if template exists; otherwise show a minimal page
+    try:
+        return render_template("about.html")
+    except Exception:
+        return "<h1>About</h1><p>Coming soon.</p>"
 
 @app.route("/news")
 def news():
-    return render_template("news.html")
+    try:
+        return render_template("news.html")
+    except Exception:
+        return "<h1>News</h1><p>Coming soon.</p>"
 
-@app.route("/results", methods=["POST"])
+@app.route("/results")
 def results():
-    query = request.form.get("query", "")
-    result = run_algorithm(query)
-    return render_template("results.html", result=result)
+    try:
+        return render_template("results.html")
+    except Exception:
+        return "<h1>Results</h1><p>Coming soon.</p>"
 
-# Simple JSON API
-@app.route("/api/score", methods=["POST"])
-def api_score():
-    data = request.get_json(silent=True) or {}
-    query = data.get("query", "")
-    result = run_algorithm(query)
-    return jsonify(result)
-
-# Health endpoint for the platform
-@app.route("/healthz")
-def healthz():
-    return "ok", 200
-
-# Catch‑all error logging (still returns 500)
-@app.errorhandler(Exception)
-def on_error(err):
-    log.exception("Unhandled error: %s", err)
-    return ("Internal error", 500)
-
-if __name__ == "__main__":
-    # local/dev only
-    app.run(host="0.0.0.0", port=8080, debug=False)
+@app.route("/agent")
+def agent_ui():
+    """Simple page to view agent memory and run a test analysis."""
+    # Fallback text if Jinja template doesn't exist
+    try:
+        return render_template("agent.html")
+    except Exception:
+        if agent is None:
+            return f"<h1>Agent</h1><p>Import error: {_agent_import_error}</p>"
+        mem = agent.get_recent_memory(20)
+        items = "".join(f"<li>{m}</li>" for m in mem)
+        return f"""
+            <h1>Agent Memory</h1>
+            <ul>{items}</ul>
+            <form method="post" action="/agent/run"><button>Run test analysis</button
