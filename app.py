@@ -1,66 +1,58 @@
 import os
+import threading
 from flask import Flask, render_template, jsonify
 
-# Optional imports guarded so the app never crashes if agent/storage change
+# guarded imports so the app never fails to boot
 try:
     from agent.agent import TradingAgent
-except Exception:  # pragma: no cover
+except Exception:
     TradingAgent = None
 
 try:
     from agent.storage import Storage
-except Exception:  # pragma: no cover
+except Exception:
     Storage = None
 
 app = Flask(__name__, template_folder="templates", static_folder="static")
 
-# --- Init backend components safely -----------------------------------------
-storage = None
-if Storage is not None:
-    try:
-        storage = Storage()
-    except Exception:
-        storage = None
+# --- init components safely --------------------------------------------------
+storage = Storage() if Storage else None
+agent = TradingAgent(storage=storage) if TradingAgent else None
 
-agent = None
-if TradingAgent is not None:
-    try:
-        agent = TradingAgent(storage=storage)
-    except Exception:
-        agent = None
-
-
-def safe_get_results(limit: int = 50):
-    """
-    Try a few common ways to fetch recent results without throwing.
-    Return a list (possibly empty).
-    """
+def safe_get_results(limit=60):
     try:
         if storage and hasattr(storage, "get_recent_results"):
-            data = storage.get_recent_results(limit=limit)
-            return data or []
+            return storage.get_recent_results(limit=limit) or []
         if storage and hasattr(storage, "load_results"):
-            data = storage.load_results(limit=limit)
-            return data or []
+            return storage.load_results(limit=limit) or []
     except Exception:
         pass
-    # Fallback: look for a simple JSONL file written by the agent
-    path = os.getenv("RESULTS_PATH", "data/results.jsonl")
-    items = []
-    if os.path.exists(path):
+    return []
+
+# --- optional background thread ---------------------------------------------
+_bg_thread = None
+def maybe_start_background_agent():
+    global _bg_thread
+    if not agent:
+        return
+    if os.getenv("ENABLE_AGENT", "0") != "1":
+        return
+    if _bg_thread and _bg_thread.is_alive():
+        return
+
+    def loop():
         try:
-            import json
-            with open(path, "r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        items.append(json.loads(line))
+            agent.run_forever(interval_seconds=int(os.getenv("AGENT_INTERVAL", "300")))
         except Exception:
-            return []
-    return items[-limit:]
+            # swallow to avoid crashing container; check logs if needed
+            pass
 
+    _bg_thread = threading.Thread(target=loop, daemon=True)
+    _bg_thread.start()
 
-# --- Routes ------------------------------------------------------------------
+maybe_start_background_agent()
+
+# --- routes ------------------------------------------------------------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -75,19 +67,33 @@ def news():
 
 @app.route("/results")
 def results():
-    data = safe_get_results(limit=60)
-    # Never crash the page; always render the template
-    return render_template("results.html", results=data)
+    return render_template("results.html", results=safe_get_results(limit=60))
 
-# Health and diagnostics
+# Diagnostics
 @app.route("/health")
 def health():
     return jsonify({"status": "ok"})
 
 @app.route("/api/agent/status")
-def agent_status():
-    status = {"loaded": bool(agent)}
-    if hasattr(agent, "status"):
+def api_agent_status():
+    st = {"loaded": bool(agent)}
+    if agent:
         try:
-            status.update(agent.status())
+            st.update(agent.status())
         except Exception:
+            st["status"] = "error"
+    return jsonify(st)
+
+@app.route("/api/agent/run_once", methods=["POST", "GET"])
+def api_agent_run_once():
+    if not agent:
+        return jsonify({"ok": False, "error": "agent-not-loaded"}), 500
+    out = agent.run_once()
+    return jsonify({"ok": True, "result": out})
+
+@app.route("/api/results")
+def api_results():
+    return jsonify({"results": safe_get_results(limit=200)})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 8080)))
