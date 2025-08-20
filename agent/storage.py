@@ -1,60 +1,27 @@
-import os, sqlite3, json, time
+import json
+import os
 
-DB_PATH = os.getenv("AGENT_DB", "agent.db")
+STORAGE_FILE = "agent_data.json"
 
-def _conn():
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    return con
+def load_data():
+    """Load agent data from JSON file."""
+    if os.path.exists(STORAGE_FILE):
+        with open(STORAGE_FILE, "r") as f:
+            return json.load(f)
+    return {"memory": []}
 
-def init_db():
-    con = _conn(); cur = con.cursor()
-    cur.execute("""CREATE TABLE IF NOT EXISTS signals(
-        id TEXT PRIMARY KEY,
-        symbol TEXT,
-        ts INTEGER,
-        label TEXT,
-        confidence INTEGER,
-        meta TEXT
-    )""")
-    cur.execute("""CREATE TABLE IF NOT EXISTS proposals(
-        id TEXT PRIMARY KEY,
-        ts INTEGER,
-        title TEXT,
-        change_json TEXT,
-        status TEXT
-    )""")
-    con.commit(); con.close()
+def save_data(data):
+    """Save agent data to JSON file."""
+    with open(STORAGE_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
-def save_signal(sig: dict):
-    con = _conn(); cur = con.cursor()
-    cur.execute("INSERT OR REPLACE INTO signals VALUES(?,?,?,?,?,?)", (
-        sig["id"],
-        sig["symbol"],
-        sig["ts"],
-        sig["label"],
-        sig["confidence"],
-        json.dumps(sig.get("meta", {}))
-    ))
-    con.commit(); con.close()
+def add_memory(entry):
+    """Add a new memory entry for the agent."""
+    data = load_data()
+    data["memory"].append(entry)
+    save_data(data)
 
-def latest_signals(limit=20):
-    con = _conn(); cur = con.cursor()
-    cur.execute(
-        "SELECT symbol, ts, label, confidence, meta FROM signals "
-        "ORDER BY ts DESC LIMIT ?", (limit,)
-    )
-    rows = [dict(r) for r in cur.fetchall()]
-    con.close()
-    return rows
-
-def save_proposal(pid: str, title: str, change: dict, status: str = "pending"):
-    con = _conn(); cur = con.cursor()
-    cur.execute("INSERT OR REPLACE INTO proposals VALUES(?,?,?,?,?)", (
-        pid,
-        int(time.time()),
-        title,
-        json.dumps(change),
-        status
-    ))
-    con.commit(); con.close()
+def get_memory(limit=10):
+    """Retrieve the last `limit` memory entries."""
+    data = load_data()
+    return data["memory"][-limit:]
