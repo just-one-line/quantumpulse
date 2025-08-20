@@ -1,14 +1,12 @@
 # algorithm.py
-# Temporary safe placeholder
+from datetime import datetime
 
-def run_algorithm(input_data=None):
-    """
-    Placeholder algorithm function.
-    Later, this will implement the full logic we discussed.
-    For now, it just returns a fixed response.
-    """
+def run_algorithm(query: str):
+    q = (query or "").strip()
+    score = round(min(len(q) / 100.0, 1.0), 3)
     return {
-        "status": "ok",
-        "message": "Algorithm placeholder executed successfully",
-        "input": input_data
+        "query": q,
+        "score": score,
+        "explain": "Demo scoring based on length of the query.",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
