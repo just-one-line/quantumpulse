@@ -1,32 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Home · QuantumPulse{% endblock %}
 
 {% block content %}
-<section class="section">
-  <h1 class="h1">👋 Hello from QuantumPulse</h1>
-  <p class="muted">If you can see this, templates are wired correctly.</p>
+  <main class="container">
+    <h1>QuantumPulse</h1>
+    <p>Welcome! Use the scanner to prepare for Fed events.</p>
 
-  <div class="chip-row">
-    <a class="chip" href="/about">About</a>
-    <a class="chip" href="/news">News</a>
-    <a class="chip" href="/results">Results</a>
-    <a class="chip" href="/api/agent/status">Agent Status (JSON)</a>
-    <a class="chip" href="/health">Health</a>
-    <button id="runBtn" class="chip" style="cursor:pointer;">▶ Run Agent Once</button>
-  </div>
+    <form action="{{ url_for('run_scan') }}" method="post">
+      <button type="submit">Run Scan</button>
+    </form>
 
-  <pre id="runOut" class="pre"></pre>
-</section>
+    {% if results %}
+      <h2>Results</h2>
+      <pre>{{ results | tojson(indent=2) }}</pre>
+    {% endif %}
+  </main>
 {% endblock %}
 
 {% block scripts %}
-<script>
-  const btn = document.getElementById('runBtn');
-  const out = document.getElementById('runOut');
-  if (btn) {
-    btn.addEventListener('click', async () => {
-      out.textContent = 'Running…';
-      try {
-        const r = await fetch('/api/agent/run_once', { method:'POST' });
-        const j = await r.json();
-        out
+  <script>
+    // Optional page JS goes here
+    console.log("Index page loaded");
+  </script>
+{% endblock %}
