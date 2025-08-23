@@ -1,33 +1,13 @@
-{% set APP_NAME = "QuantumPulse" %}
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>{% block title %}{{ APP_NAME }}{% endblock %}</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
-  <header class="site-header">
-    <a class="brand" href="/">⚡ {{ APP_NAME }}</a>
-    <nav class="nav">
-      <a href="/" class="nav-link {% if request.path=='/' %}active{% endif %}">Home</a>
-      <a href="/about" class="nav-link {% if request.path.startswith('/about') %}active{% endif %}">About</a>
-      <a href="/news" class="nav-link {% if request.path.startswith('/news') %}active{% endif %}">News</a>
-      <a href="/results" class="nav-link {% if request.path.startswith('/results') %}active{% endif %}">Results</a>
-    </nav>
-    <button id="navToggle" class="nav-toggle" aria-label="Menu">☰</button>
-  </header>
-
-  <main class="container">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "QuantumPulse" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
     {% block content %}{% endblock %}
-  </main>
-
-  <footer class="site-footer">
-    © {{ now().year if now else 2025 }} {{ APP_NAME }}
-  </footer>
-
-  <script src="/static/script.js"></script>
-  {% block scripts %}{% endblock %}
-</body>
+    {% block scripts %}{% endblock %}
+  </body>
 </html>
